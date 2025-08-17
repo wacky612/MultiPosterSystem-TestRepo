@@ -1,0 +1,41 @@
+name: Build and Deploy
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: 'build_and_deploy'
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+          architecture: 'x64'
+      - uses: FedericoCarboni/setup-ffmpeg@v3
+        id: setup-ffmpeg
+      - run: python scripts/build.py
+      - run: sh scripts/build.sh
+      - uses: actions/upload-pages-artifact@v3
+        id: deployment
+        with:
+          path: build/
+  deploy:
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/deploy-pages@v4
+        id: deployment
+        
